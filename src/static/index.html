@@ -46,5 +46,83 @@
     </footer>
 
     <script src="app.js"></script>
+    <script>
+      // Helper to create participant list HTML
+      function createParticipantsList(participants) {
+        if (!participants || participants.length === 0) {
+          return '<ul class="participants-list"><li><em>No participants yet</em></li></ul>';
+        }
+        return `<ul class="participants-list">
+          ${participants.map(email => `<li>${email}</li>`).join('')}
+        </ul>`;
+      }
+
+      // Load activities and render cards
+      fetch('/activities')
+        .then(res => res.json())
+        .then(data => {
+          const activitiesList = document.getElementById('activities-list');
+          activitiesList.innerHTML = '';
+          Object.entries(data).forEach(([name, info]) => {
+            const card = document.createElement('div');
+            card.className = 'activity-card';
+            card.innerHTML = `
+              <h4>${name}</h4>
+              <p>${info.description}</p>
+              <p><strong>Schedule:</strong> ${info.schedule}</p>
+              <p><strong>Max Participants:</strong> ${info.max_participants}</p>
+              <div class="participants-section">
+                <strong>Participants:</strong>
+                ${createParticipantsList(info.participants)}
+              </div>
+            `;
+            activitiesList.appendChild(card);
+          });
+
+          // Populate activity select options
+          const activitySelect = document.getElementById('activity');
+          activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+          Object.keys(data).forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = name;
+            activitySelect.appendChild(option);
+          });
+        });
+
+      // Sign up form submission
+      document.getElementById('signup-form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        const email = document.getElementById('email').value;
+        const activity = document.getElementById('activity').value;
+
+        fetch('/signup', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ email, activity }),
+        })
+          .then(res => res.json())
+          .then(data => {
+            const messageDiv = document.getElementById('message');
+            messageDiv.className = '';
+            messageDiv.textContent = data.message;
+
+            // If signup successful, update participants list for the activity
+            if (data.success) {
+              const activityCard = Array.from(document.getElementsByClassName('activity-card'))
+                .find(card => card.querySelector('h4').textContent === data.activity);
+              if (activityCard) {
+                const participantsSection = activityCard.querySelector('.participants-section');
+                participantsSection.innerHTML = `
+                  <strong>Participants:</strong>
+                  ${createParticipantsList(data.participants)}
+                `;
+              }
+            }
+          });
+      });
+    </script>
   </body>
 </html>
