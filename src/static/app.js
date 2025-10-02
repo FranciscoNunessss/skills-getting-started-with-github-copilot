@@ -77,6 +77,7 @@ document.addEventListener("DOMContentLoaded", () => {
         messageDiv.textContent = result.message;
         messageDiv.className = "success";
         signupForm.reset();
+        fetchActivities(); // <-- Add this line to refresh activity cards
       } else {
         messageDiv.textContent = result.detail || "An error occurred";
         messageDiv.className = "error";
